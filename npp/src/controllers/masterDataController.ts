@@ -6,6 +6,43 @@ import { Utils } from "../utils/utils";
 import platform from "../models/platform";
 
 export class masterDataController {
+  /**
+   * @swagger
+   * /master/masterCategory/create:
+   *   post:
+   *     tags:
+   *       - Master Categories
+   *     summary: Create a new master category
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - code
+   *               - title
+   *             properties:
+   *               code:
+   *                 type: string
+   *                 example: "constituency"
+   *               title:
+   *                 type: string
+   *                 example: "Constituency"
+   *               description:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: Master category created successfully
+   *       400:
+   *         description: Bad request
+   *       401:
+   *         description: Unauthorized
+   *       500:
+   *         description: Internal server error
+   */
   // masterCategory
   static async createMasterCategory(req, res, next) {
     try {
@@ -31,6 +68,60 @@ export class masterDataController {
     }
   }
 
+  /**
+   * @swagger
+   * /master/masterCategory/getAll:
+   *   get:
+   *     tags:
+   *       - Master Categories
+   *     summary: Get all master categories with optional filtering
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: code
+   *         schema:
+   *           type: string
+   *         description: Filter by category code
+   *     responses:
+   *       200:
+   *         description: Master categories fetched successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                 totalCounts:
+   *                   type: integer
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       _id:
+   *                         type: string
+   *                       code:
+   *                         type: string
+   *                       title:
+   *                         type: string
+   *                       description:
+   *                         type: string
+   *                       created_by:
+   *                         type: string
+   *                         description: ObjectId reference
+   *                       created_at:
+   *                         type: string
+   *                         format: date-time
+   *                       updated_at:
+   *                         type: string
+   *                         format: date-time
+   *       401:
+   *         description: Unauthorized
+   *       500:
+   *         description: Internal server error
+   */
   static async getAllMasterCategory(req, res, next) {
     try {
       const { code } = req.query;
@@ -128,6 +219,65 @@ export class masterDataController {
     }
   }
 
+  /**
+   * @swagger
+   * /master/masterData/getAll:
+   *   get:
+   *     tags:
+   *       - Master Data
+   *     summary: Get all master data with optional filtering
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: code
+   *         schema:
+   *           type: string
+   *         description: Filter by master category code
+   *       - in: query
+   *         name: value
+   *         schema:
+   *           type: string
+   *         description: Filter by master data value
+   *     responses:
+   *       200:
+   *         description: Master data fetched successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                 totalCounts:
+   *                   type: integer
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       _id:
+   *                         type: string
+   *                       masterCategoryId:
+   *                         type: string
+   *                         description: ObjectId reference to master category
+   *                       value:
+   *                         type: string
+   *                       title:
+   *                         type: string
+   *                       description:
+   *                         type: string
+   *                       created_at:
+   *                         type: string
+   *                         format: date-time
+   *                       updated_at:
+   *                         type: string
+   *                         format: date-time
+   *       401:
+   *         description: Unauthorized
+   *       500:
+   *         description: Internal server error
+   */
   static async getAllMasterData(req, res, next) {
     try {
       const { code, value } = req.query;

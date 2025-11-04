@@ -7,6 +7,51 @@ import * as mongoose from "mongoose";
 import * as Jwt from "jsonwebtoken";
 
 export class admincontroller {
+  /**
+   * @swagger
+   * /api/admin/create:
+   *   post:
+   *     tags:
+   *       - Admin
+   *     summary: Create a new admin user
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - userType
+   *               - firstName
+   *               - lastName
+   *               - phone
+   *               - email
+   *             properties:
+   *               userType:
+   *                 type: string
+   *                 description: ObjectId of user type
+   *               firstName:
+   *                 type: string
+   *               lastName:
+   *                 type: string
+   *               phone:
+   *                 type: string
+   *               email:
+   *                 type: string
+   *               password:
+   *                 type: string
+   *               adminUserPermission:
+   *                 type: object
+   *     responses:
+   *       200:
+   *         description: User created successfully
+   *       400:
+   *         description: Bad request
+   *       500:
+   *         description: Internal server error
+   */
   static async create(req, res, next) {
     try {
       req.body.candidateId = await generateUserToken();
@@ -25,6 +70,84 @@ export class admincontroller {
     }
   }
 
+  /**
+   * @swagger
+   * /api/admin/getAll:
+   *   get:
+   *     tags:
+   *       - Admin
+   *     summary: Get all users with optional filtering
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: userType
+   *         schema:
+   *           type: string
+   *         description: Filter by user type ObjectId
+   *       - in: query
+   *         name: page
+   *         schema:
+   *           type: integer
+   *           default: 1
+   *         description: Page number
+   *       - in: query
+   *         name: limit
+   *         schema:
+   *           type: integer
+   *           default: 10
+   *         description: Number of items per page
+   *     responses:
+   *       200:
+   *         description: Users fetched successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                 totalCounts:
+   *                   type: integer
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       _id:
+   *                         type: string
+   *                       firstName:
+   *                         type: string
+   *                       lastName:
+   *                         type: string
+   *                       phone:
+   *                         type: string
+   *                       email:
+   *                         type: string
+   *                       userType:
+   *                         type: object
+   *                         properties:
+   *                           type:
+   *                             type: string
+   *                           title:
+   *                             type: string
+   *                       constituency:
+   *                         type: object
+   *                         properties:
+   *                           value:
+   *                             type: string
+   *                       registrationType:
+   *                         type: object
+   *                         properties:
+   *                           value:
+   *                             type: string
+   *                       status:
+   *                         type: boolean
+   *       401:
+   *         description: Unauthorized
+   *       500:
+   *         description: Internal server error
+   */
   static async getAllUsers(req, res, next) {
     try {
       const { userType } = req.query;
@@ -103,6 +226,66 @@ export class admincontroller {
     }
   }
 
+  /**
+   * @swagger
+   * /api/admin/login:
+   *   post:
+   *     tags:
+   *       - Admin
+   *     summary: Admin user login
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - userId
+   *               - password
+   *               - platformName
+   *               - platformToken
+   *               - deviceDetail
+   *             properties:
+   *               userId:
+   *                 type: string
+   *                 description: User phone number or username
+   *               password:
+   *                 type: string
+   *               platformName:
+   *                 type: string
+   *                 example: "admin"
+   *               platformToken:
+   *                 type: string
+   *                 description: Platform authentication token
+   *               deviceDetail:
+   *                 type: string
+   *                 description: Device information
+   *     responses:
+   *       200:
+   *         description: Login successful
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 statusCode:
+   *                   type: integer
+   *                   example: 200
+   *                 token:
+   *                   type: string
+   *                   description: JWT token
+   *                 message:
+   *                   type: string
+   *                 data:
+   *                   type: object
+   *                   description: User data
+   *       400:
+   *         description: Bad request
+   *       401:
+   *         description: Invalid credentials
+   *       500:
+   *         description: Internal server error
+   */
   static async login(req, res, next) {
     try {
       let { password } = req.body;

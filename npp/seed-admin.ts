@@ -50,12 +50,142 @@ async function seedAdmin() {
         email: 'admin@npp.com',
         password: await Utils.encryptPassword('janParty@123'),
         otpStatus: true,
-        status: true
+        status: true,
+        adminUserPermission: {
+          adminUser: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          masterCategory: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          masterData: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          userType: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          news: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          platform: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          donationMaster: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          event: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          video: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          leader: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          }
+        }
       });
       await adminUser.save();
-      console.log('Created admin user');
+      console.log('Created admin user with full permissions');
     } else {
-      console.log('Admin user already exists');
+      // Update existing admin user with permissions if not already set
+      if (!adminUser.adminUserPermission || Object.keys(adminUser.adminUserPermission).length === 0) {
+        adminUser.adminUserPermission = {
+          adminUser: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          masterCategory: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          masterData: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          userType: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          news: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          platform: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          donationMaster: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          event: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          video: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          },
+          leader: {
+            creator: true,
+            viewer: true,
+            editor: true,
+            remover: true
+          }
+        };
+        await adminUser.save();
+        console.log('Updated admin user with full permissions');
+      } else {
+        console.log('Admin user already exists with permissions');
+      }
     }
 
     console.log('Seeding completed');

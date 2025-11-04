@@ -2,17 +2,18 @@ import * as mongoose from "mongoose";
 import { model } from "mongoose";
 import { Utils } from "../utils/utils";
 
-const newsSchema = new mongoose.Schema(
+const eventSchema = new mongoose.Schema(
   {
-    type: { type: String, required: true }, //healthCare education 
     title: { type: String, required: true },
-    description: { type: String },
-    viewCount: { type: Number,default:0 },
-    attachment: {
-      url: { type: String },
-      docSha: { type: String },
+    description: { type: String, required: true },
+    date: { type: Date, required: true },
+    location: { type: String },
+    status: {
+      type: String,
+      enum: ["Upcoming", "Past", "Cancelled"],
+      default: "Upcoming"
     },
-    iconImage: {
+    image: {
       url: { type: String },
       docSha: { type: String },
     },
@@ -25,4 +26,4 @@ const newsSchema = new mongoose.Schema(
   { id: true }
 );
 
-export default model("news", newsSchema);
+export default model("event", eventSchema);

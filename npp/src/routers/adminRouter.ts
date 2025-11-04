@@ -7,6 +7,9 @@ import { PERMISSIONS } from "../middlewares/validRolePermisson";
 import hasRole from "../middlewares/role.middleware";
 import { websiteController } from "../controllers/websiteController";
 import { donationController } from "../controllers/donationController";
+import { eventController } from "../controllers/eventController";
+import { videoController } from "../controllers/videoController";
+import { leaderController } from "../controllers/leaderController";
 import { adminValidator } from "./validators/adminValidators";
 
 class adminRouter {
@@ -47,12 +50,14 @@ class adminRouter {
     this.router.get(
       "/news/getById",
       globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.NEWS_VIEWER),
       globalMiddleWare.checkError,
       newsController.getByIdNews
     );
     this.router.get(
       "/news/getAll",
       globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.NEWS_VIEWER),
       globalMiddleWare.checkError,
       newsController.getAllNews
     );
@@ -80,6 +85,42 @@ class adminRouter {
       "/donation/getById",
       globalMiddleWare.checkError,
       donationController.getByIdDonationMaster
+    );
+    this.router.get(
+      "/events/getById",
+      globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.checkError,
+      eventController.getByIdEvent
+    );
+    this.router.get(
+      "/events/getAll",
+      globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.checkError,
+      eventController.getAllEvents
+    );
+    this.router.get(
+      "/videos/getById",
+      globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.checkError,
+      videoController.getByIdVideo
+    );
+    this.router.get(
+      "/videos/getAll",
+      globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.checkError,
+      videoController.getAllVideos
+    );
+    this.router.get(
+      "/leaders/getById",
+      globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.checkError,
+      leaderController.getByIdLeader
+    );
+    this.router.get(
+      "/leaders/getAll",
+      globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.checkError,
+      leaderController.getAllLeaders
     );
   }
   postRoutes() {
@@ -119,6 +160,27 @@ class adminRouter {
       donationController.createDonationMaster
     );
     this.router.post(
+      "/events/create",
+      globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.EVENT_CREATOR),
+      globalMiddleWare.checkError,
+      eventController.create
+    );
+    this.router.post(
+      "/videos/create",
+      globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.VIDEO_CREATOR),
+      globalMiddleWare.checkError,
+      videoController.create
+    );
+    this.router.post(
+      "/leaders/create",
+      globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.LEADER_CREATOR),
+      globalMiddleWare.checkError,
+      leaderController.create
+    );
+    this.router.post(
       "/website/donateByMember",
       globalMiddleWare.checkError,
       donationController.donateByMember
@@ -145,12 +207,40 @@ class adminRouter {
       globalMiddleWare.checkError,
       newsController.updateNews
     );
+    this.router.delete(
+      "/news/delete",
+      globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.NEWS_REMOVER),
+      globalMiddleWare.checkError,
+      newsController.deleteNews
+    );
     this.router.patch(
       "/donation/update",
       globalMiddleWare.adminAuthenticate,
       hasRole(PERMISSIONS.DONATION_MASTER_EDITOR),
       globalMiddleWare.checkError,
       donationController.updateDonationMaster
+    );
+    this.router.patch(
+      "/events/update",
+      globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.EVENT_EDITOR),
+      globalMiddleWare.checkError,
+      eventController.updateEvent
+    );
+    this.router.patch(
+      "/videos/update",
+      globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.VIDEO_EDITOR),
+      globalMiddleWare.checkError,
+      videoController.updateVideo
+    );
+    this.router.patch(
+      "/leaders/update",
+      globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.LEADER_EDITOR),
+      globalMiddleWare.checkError,
+      leaderController.updateLeader
     );
   }
   deleteRoutes() {
@@ -160,6 +250,27 @@ class adminRouter {
       hasRole(PERMISSIONS.USERTYPE_REMOVER),
       globalMiddleWare.checkError,
       userTypeController.deleteUserType
+    );
+    this.router.delete(
+      "/events/delete",
+      globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.EVENT_REMOVER),
+      globalMiddleWare.checkError,
+      eventController.deleteEvent
+    );
+    this.router.delete(
+      "/videos/delete",
+      globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.VIDEO_REMOVER),
+      globalMiddleWare.checkError,
+      videoController.deleteVideo
+    );
+    this.router.delete(
+      "/leaders/delete",
+      globalMiddleWare.adminAuthenticate,
+      hasRole(PERMISSIONS.LEADER_REMOVER),
+      globalMiddleWare.checkError,
+      leaderController.deleteLeader
     );
   }
 }

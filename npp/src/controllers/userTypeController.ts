@@ -4,6 +4,43 @@ import * as mongoose from "mongoose";
 import { Utils } from "../utils/utils";
 
 export class userTypeController {
+  /**
+   * @swagger
+   * /api/admin/userType/create:
+   *   post:
+   *     tags:
+   *       - User Types
+   *     summary: Create a new user type
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - type
+   *               - title
+   *             properties:
+   *               type:
+   *                 type: string
+   *                 example: "admin"
+   *               title:
+   *                 type: string
+   *                 example: "Administrator"
+   *               description:
+   *                 type: string
+   *     responses:
+   *       200:
+   *         description: User type created successfully
+   *       400:
+   *         description: Bad request
+   *       401:
+   *         description: Unauthorized
+   *       500:
+   *         description: Internal server error
+   */
   static async createUserType(req, res, next) {
     try {
       let userTypeData: any = await UserType.findOne({
@@ -28,6 +65,63 @@ export class userTypeController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/admin/userType/getAll:
+   *   get:
+   *     tags:
+   *       - User Types
+   *     summary: Get all user types with optional filtering
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: type
+   *         schema:
+   *           type: string
+   *         description: Filter by user type
+   *     responses:
+   *       200:
+   *         description: User types fetched successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                 totalCounts:
+   *                   type: integer
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       _id:
+   *                         type: string
+   *                       type:
+   *                         type: string
+   *                       title:
+   *                         type: string
+   *                       description:
+   *                         type: string
+   *                       created_by:
+   *                         type: string
+   *                         description: ObjectId reference
+   *                       updated_by:
+   *                         type: string
+   *                         description: ObjectId reference
+   *                       created_at:
+   *                         type: string
+   *                         format: date-time
+   *                       updated_at:
+   *                         type: string
+   *                         format: date-time
+   *       401:
+   *         description: Unauthorized
+   *       500:
+   *         description: Internal server error
+   */
   static async getAllUserType(req, res, next) {
     try {
       const { type } = req.query;

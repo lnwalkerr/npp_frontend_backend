@@ -33,4 +33,19 @@ export let PERMISSIONS = Object.freeze({
   DONATION_MASTER_VIEWER: "donationMaster.viewer",
   DONATION_MASTER_EDITOR: "donationMaster.editor",
   DONATION_MASTER_REMOVER: "donationMaster.remover",
+
+  EVENT_CREATOR: "event.creator",
+  EVENT_VIEWER: "event.viewer",
+  EVENT_EDITOR: "event.editor",
+  EVENT_REMOVER: "event.remover",
+
+  VIDEO_CREATOR: "video.creator",
+  VIDEO_VIEWER: "video.viewer",
+  VIDEO_EDITOR: "video.editor",
+  VIDEO_REMOVER: "video.remover",
+
+  LEADER_CREATOR: "leader.creator",
+  LEADER_VIEWER: "leader.viewer",
+  LEADER_EDITOR: "leader.editor",
+  LEADER_REMOVER: "leader.remover",
 });

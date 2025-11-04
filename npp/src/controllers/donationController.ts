@@ -5,6 +5,46 @@ import { Utils } from "../utils/utils";
 import * as mongoose from "mongoose";
 
 export class donationController {
+  /**
+   * @swagger
+   * /api/admin/donation/create:
+   *   post:
+   *     tags:
+   *       - Donations
+   *     summary: Create a new donation campaign
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - typeOfDonation
+   *               - title
+   *               - totalGoal
+   *             properties:
+   *               typeOfDonation:
+   *                 type: string
+   *                 description: ObjectId of donation type from masterData
+   *               title:
+   *                 type: string
+   *               description:
+   *                 type: string
+   *               totalGoal:
+   *                 type: number
+   *                 description: Total donation goal amount
+   *     responses:
+   *       200:
+   *         description: Donation campaign created successfully
+   *       400:
+   *         description: Bad request
+   *       401:
+   *         description: Unauthorized
+   *       500:
+   *         description: Internal server error
+   */
   static async createDonationMaster(req, res, next) {
     try {
       let donationMasterData: any = await donationMaster.findOne({
@@ -30,6 +70,65 @@ export class donationController {
     }
   }
 
+  /**
+   * @swagger
+   * /api/admin/donation/getAll:
+   *   get:
+   *     tags:
+   *       - Donations
+   *     summary: Get all donation campaigns with optional filtering
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: typeOfDonation
+   *         schema:
+   *           type: string
+   *         description: Filter by donation type ObjectId
+   *     responses:
+   *       200:
+   *         description: Donation campaigns fetched successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                 totalCounts:
+   *                   type: integer
+   *                 data:
+   *                   type: array
+   *                   items:
+   *                     type: object
+   *                     properties:
+   *                       _id:
+   *                         type: string
+   *                       typeOfDonation:
+   *                         type: string
+   *                         description: ObjectId reference
+   *                       title:
+   *                         type: string
+   *                       description:
+   *                         type: string
+   *                       totalGoal:
+   *                         type: number
+   *                       status:
+   *                         type: boolean
+   *                       created_by:
+   *                         type: string
+   *                         description: ObjectId reference
+   *                       created_at:
+   *                         type: string
+   *                         format: date-time
+   *                       updated_at:
+   *                         type: string
+   *                         format: date-time
+   *       401:
+   *         description: Unauthorized
+   *       500:
+   *         description: Internal server error
+   */
   static async getAllDonationMaster(req, res, next) {
     try {
       const { typeOfDonation } = req.query;
