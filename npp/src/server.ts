@@ -950,7 +950,10 @@ export class Server {
     });
 
     // Set up other middlewares and routes
-    this.app.use(cors());
+    this.app.use(cors({
+      origin: ['http://localhost:3000', 'http://localhost:3001'],
+      credentials: true
+    }));
     this.app.use(helmet());
     this.app.disable("x-powered-by");
     this.app.set("views", path.join(__dirname, "views"));

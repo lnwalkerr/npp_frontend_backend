@@ -17,27 +17,33 @@ class masterRouter {
   getRoutes() {
     this.router.get(
       "/masterCategory/getById",
-      globalMiddleWare.adminAuthenticate,
+      // globalMiddleWare.adminAuthenticate,
       globalMiddleWare.checkError,
       masterDataController.getByIdMasterCategory
     );
     this.router.get(
       "/masterCategory/getAll",
-      globalMiddleWare.adminAuthenticate,
+      // globalMiddleWare.adminAuthenticate,
       globalMiddleWare.checkError,
       masterDataController.getAllMasterCategory
     );
     this.router.get(
       "/masterData/getById",
-      globalMiddleWare.adminAuthenticate,
+      // globalMiddleWare.adminAuthenticate,
       globalMiddleWare.checkError,
       masterDataController.getByIdMasterData
     );
     this.router.get(
       "/masterData/getAll",
-      globalMiddleWare.adminAuthenticate,
+      // globalMiddleWare.adminAuthenticate,
       globalMiddleWare.checkError,
       masterDataController.getAllMasterData
+    );
+    this.router.get(
+      "/masterData/getByMasterCategoryId",
+      // globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.checkError,
+      masterDataController.getMasterDataByMasterCategoryId
     );
     this.router.get(
       "/platform/getById",

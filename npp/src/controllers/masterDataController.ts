@@ -164,6 +164,26 @@ export class masterDataController {
     }
   }
 
+  
+  static async getMasterDataByMasterCategoryId(req, res, next) {
+    try {
+      let data: any = await masterData.find({
+        masterCategoryId: req.query.masterCategoryId,
+      });
+
+      // Note: data is always an array, even if empty
+      // Remove the check that causes the bug
+      res.json({
+        message: "masterData fetched successfully",
+        data: data,
+        status_code: 200,
+      });
+    } catch (e) {
+      next(e);
+    }
+  }
+
+
   static async updateMasterCategory(req, res, next) {
     try {
       const { id } = req.query;
