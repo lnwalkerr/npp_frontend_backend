@@ -127,13 +127,13 @@ class adminRouter {
     );
     this.router.get(
       "/getAllRepositories",
-      // globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.adminAuthenticate,
       globalMiddleWare.checkError,
       getAllRepositories
     );
     this.router.get(
       "/getRepositoryById",
-      // globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.adminAuthenticate,
       globalMiddleWare.checkError,
       getRepositoryById
     );
@@ -148,7 +148,7 @@ class adminRouter {
     );
     this.router.post(
       "/createRepository",
-      // globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.adminAuthenticate,
       globalMiddleWare.checkError,
       upload.array("images", 10),
       createRepository
