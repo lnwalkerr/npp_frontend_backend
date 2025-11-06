@@ -11,6 +11,9 @@ import { eventController } from "../controllers/eventController";
 import { videoController } from "../controllers/videoController";
 import { leaderController } from "../controllers/leaderController";
 import { adminValidator } from "./validators/adminValidators";
+import { createRepository, getAllRepositories, getRepositoryById } from "../controllers/imageController";
+import { upload } from "../utils/fileUpload";
+
 
 class adminRouter {
   public router: Router;
@@ -122,6 +125,18 @@ class adminRouter {
       globalMiddleWare.checkError,
       leaderController.getAllLeaders
     );
+    this.router.get(
+      "/getAllRepositories",
+      globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.checkError,
+      getAllRepositories
+    );
+    this.router.get(
+      "/getRepositoryById",
+      globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.checkError,
+      getRepositoryById
+    );
   }
   postRoutes() {
     this.router.post(
@@ -130,6 +145,13 @@ class adminRouter {
       hasRole(PERMISSIONS.USERTYPE_CREATOR),
       globalMiddleWare.checkError,
       userTypeController.createUserType
+    );
+    this.router.post(
+      "/createRepository",
+      globalMiddleWare.adminAuthenticate,
+      globalMiddleWare.checkError,
+      upload.array("images", 10),
+      createRepository
     );
     this.router.post(
       "/create",
