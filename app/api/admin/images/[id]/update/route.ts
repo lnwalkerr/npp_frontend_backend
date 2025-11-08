@@ -30,7 +30,7 @@ async function ensureDataFile() {
 }
 
 // Update repository
-async function updateRepository(id: string, title: string, newFiles: File[] = []) {
+async function updateRepository(id: string, title: string, newFiles: File[] = [], imagesToDelete: string[] = []) {
   try {
     await ensureDataFile();
 
@@ -47,6 +47,26 @@ async function updateRepository(id: string, title: string, newFiles: File[] = []
 
     // Update title
     repository.title = title;
+
+    // Handle image deletions
+    if (imagesToDelete.length > 0) {
+      for (const filename of imagesToDelete) {
+        try {
+          // Remove from filesystem
+          const filePath = join(process.cwd(), "public", "uploads", filename);
+          if (existsSync(filePath)) {
+            await unlink(filePath);
+          }
+
+          // Remove from repository images array
+          repository.images = repository.images.filter(img => img.filename !== filename);
+        } catch (error) {
+          console.error(`Error deleting image ${filename}:`, error);
+          // Continue with other deletions
+        }
+      }
+      repository.imageCount = repository.images.length;
+    }
 
     // Handle new file uploads
     if (newFiles.length > 0) {
@@ -126,6 +146,10 @@ export async function PATCH(
       );
     }
 
+    // Get images to delete
+    const imagesToDeleteJson = formData.get("imagesToDelete") as string;
+    const imagesToDelete: string[] = imagesToDeleteJson ? JSON.parse(imagesToDeleteJson) : [];
+
     // Get all new files from form data
     const newFiles: File[] = [];
     const formDataEntries = Array.from(formData.entries());
@@ -135,7 +159,7 @@ export async function PATCH(
       }
     }
 
-    const result = await updateRepository(id, title, newFiles);
+    const result = await updateRepository(id, title, newFiles, imagesToDelete);
 
     if (!result.success) {
       return NextResponse.json(result, { status: 404 });

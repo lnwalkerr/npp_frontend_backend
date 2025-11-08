@@ -38,6 +38,7 @@ export default function EditImagesPage(): JSX.Element {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoCounter, setPhotoCounter] = useState(2);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]); // Track filenames of existing images to delete
   const [formData, setFormData] = useState<RepositoryFormData>({
     title: "",
     photos: [
@@ -115,6 +116,11 @@ export default function EditImagesPage(): JSX.Element {
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title.trim());
 
+      // Add images to delete
+      if (imagesToDelete.length > 0) {
+        formDataToSend.append("imagesToDelete", JSON.stringify(imagesToDelete));
+      }
+
       // Add only new files (not existing ones)
       formData.photos.forEach((photo, photoIndex) => {
         photo.files.forEach((file, fileIndex) => {
@@ -124,6 +130,7 @@ export default function EditImagesPage(): JSX.Element {
 
       console.log("🚀 Updating repository...");
       console.log("Title:", formData.title);
+      console.log("Images to delete:", imagesToDelete);
       console.log("New files:", formData.photos.reduce((sum, photo) => sum + photo.files.length, 0));
 
       const response = await fetch(`/api/admin/images/${id}/update`, {
@@ -255,17 +262,22 @@ export default function EditImagesPage(): JSX.Element {
       ...prev,
       photos: prev.photos.map((photo) => {
         if (photo.id === 1) {
-          // Check if this is an existing image (from repository) or new uploaded file
-          const isExistingImage = previewIndex < (photo.previews.length - photo.files.length);
+          const existingImagesCount = photo.previews.length - photo.files.length;
+          const isExistingImage = previewIndex < existingImagesCount;
 
-          if (!isExistingImage) {
+          if (isExistingImage) {
+            // This is an existing image - add to deletion list and remove from previews
+            const existingImageUrl = photo.previews[previewIndex];
+            const filename = existingImageUrl.split('/').pop() || '';
+
+            setImagesToDelete(prev => [...prev, filename]);
+          } else {
             // This is a new uploaded file, revoke the object URL
-            const newFileIndex = previewIndex - (photo.previews.length - photo.files.length);
             URL.revokeObjectURL(photo.previews[previewIndex]);
           }
 
           // Remove from arrays
-          const updatedFiles = isExistingImage ? photo.files : photo.files.filter((_, index) => index !== (previewIndex - (photo.previews.length - photo.files.length)));
+          const updatedFiles = isExistingImage ? photo.files : photo.files.filter((_, index) => index !== (previewIndex - existingImagesCount));
           const updatedPreviews = photo.previews.filter((_, index) => index !== previewIndex);
 
           // Handle cover photo index adjustment
@@ -451,18 +463,16 @@ export default function EditImagesPage(): JSX.Element {
                                               </span>
                                             </div>
                                           )}
-                                          {!isExistingImage && (
-                                            <button
-                                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600 transition text-xs shadow-lg"
-                                              type="button"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                removeImagePreview(previewIndex);
-                                              }}
-                                            >
-                                              <X className="w-3 h-3" />
-                                            </button>
-                                          )}
+                                          <button
+                                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600 transition text-xs shadow-lg"
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              removeImagePreview(previewIndex);
+                                            }}
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
                                           <div className="text-xs text-center mt-1 truncate w-20">
                                             {isExistingImage ? "Existing" : photo.files[previewIndex - (photo.previews.length - photo.files.length)]?.name}
                                           </div>
