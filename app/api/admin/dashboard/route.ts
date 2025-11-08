@@ -18,7 +18,7 @@ export async function GET(req: Request) {
 
     const token = cookieObj["token"] || "";
 
-    const baseUrl = "http://localhost:5001/api/admin";
+    const baseUrl = "http://localhost:5005/api/admin";
     const authHeaders = {
       "Content-Type": "application/json",
       Authorization: token ? `Bearer ${token}` : "",

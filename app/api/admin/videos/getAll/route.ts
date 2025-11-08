@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       params.append(key, value);
     });
 
-    const API_URL = `http://localhost:5001/api/admin/videos/getAll?${params}`;
+    const API_URL = `http://localhost:5005/api/admin/videos/getAll?${params}`;
 
     const response = await fetch(API_URL, {
       method: "GET",

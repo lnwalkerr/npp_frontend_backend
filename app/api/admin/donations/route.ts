@@ -7,7 +7,7 @@ export async function GET(req: Request) {
   const search = searchParams.get("search") || "";
 
   // 👉 Replace with your backend URL
-  const API_URL = `http://localhost:5001/api/admin/donation/getAll?${new URLSearchParams(
+  const API_URL = `http://localhost:5005/api/admin/donation/getAll?${new URLSearchParams(
     {
       page: page.toString(),
       limit: limit.toString(),

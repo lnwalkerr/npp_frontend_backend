@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   const type = searchParams.get("type") || "";
 
   // 👉 Use authenticated endpoint
-  const API_URL = `http://localhost:5001/api/admin/news/getAll?${new URLSearchParams(
+  const API_URL = `http://localhost:5005/api/admin/news/getAll?${new URLSearchParams(
     {
       page: page.toString(),
       limit: limit.toString(),
