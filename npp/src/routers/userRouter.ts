@@ -3,6 +3,7 @@ import { globalMiddleWare } from "../middlewares/globalMiddleWare";
 import { donationController } from "../controllers/donationController";
 import { userValidator } from "./validators/userValidators";
 import { userController } from "../controllers/userController";
+import { createJoinRequest, getJoinRequests, updateJoinRequestStatus } from "../controllers/joinRequestController";
 
 class userRouter {
   public router: Router;
@@ -21,6 +22,11 @@ class userRouter {
       globalMiddleWare.checkError,
       userController.getByIdUser
     );
+    this.router.get(
+      "/getJoinRequests",
+      globalMiddleWare.checkError,
+      getJoinRequests
+    )
   }
   postRoutes() {
     this.router.post(
@@ -41,6 +47,11 @@ class userRouter {
       globalMiddleWare.checkError,
       donationController.donateByMember
     );
+    this.router.post(
+      "/createJoinRequest",
+      globalMiddleWare.checkError,
+      createJoinRequest
+    );
   }
   patchRoutes() {
     this.router.patch(
@@ -48,6 +59,11 @@ class userRouter {
       globalMiddleWare.adminAuthenticate,
       globalMiddleWare.checkError,
       userController.updateUser
+    );
+    this.router.patch(
+      "/updateJoinRequestStatus",
+      globalMiddleWare.checkError,
+      updateJoinRequestStatus
     );
   }
   deleteRoutes() {}

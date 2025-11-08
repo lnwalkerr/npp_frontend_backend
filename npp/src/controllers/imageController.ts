@@ -50,7 +50,18 @@ export async function createRepository(req, res, next) {
 
 export async function getAllRepositories(req, res, next) {
   try {
-    const repositories = await ImageModel.find();
+    // Get pagination parameters from query (default: page 1, limit 10)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count (before pagination)
+    const totalRepositories = await ImageModel.countDocuments();
+
+    // Fetch paginated repositories
+    const repositories = await ImageModel.find()
+      .skip(skip)
+      .limit(limit);
 
     // Add imageCount field to each repository
     const data = repositories.map((repo) => ({
@@ -61,7 +72,15 @@ export async function getAllRepositories(req, res, next) {
     res.status(200).json({
       success: true,
       message: "Repositories fetched successfully",
-      count: data.length, // total repositories
+      pagination: {
+        total: totalRepositories,
+        page,
+        limit,
+        totalPages: Math.ceil(totalRepositories / limit),
+        hasNextPage: page * limit < totalRepositories,
+        hasPrevPage: page > 1,
+      },
+      count: data.length, // count in this page
       data, // includes imageCount for each
     });
   } catch (error) {
