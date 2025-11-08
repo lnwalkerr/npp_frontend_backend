@@ -30,7 +30,7 @@ async function ensureDataFile() {
 }
 
 // Update repository
-async function updateRepository(id: string, title: string, newFiles: File[] = [], imagesToDelete: string[] = [], imageDescriptions: string[] = []) {
+async function updateRepository(id: string, title: string, newFiles: File[] = [], imagesToDelete: string[] = []) {
   try {
     await ensureDataFile();
 
@@ -67,13 +67,8 @@ async function updateRepository(id: string, title: string, newFiles: File[] = []
       }
     }
 
-    // Update descriptions for existing images
-    if (imageDescriptions.length > 0) {
-      repository.images = repository.images.map((img, index) => ({
-        ...img,
-        description: imageDescriptions[index] || img.description || ""
-      }));
-    }
+    // Note: Individual image descriptions are not used in this implementation
+    // The description is at the repository level, not per image
 
     // Handle new file uploads
     if (newFiles.length > 0) {
@@ -101,16 +96,10 @@ async function updateRepository(id: string, title: string, newFiles: File[] = []
 
         await writeFile(filePath, buffer);
 
-        // Get description for this new file if available
-        const existingImagesCount = repository.images.length;
-        const descriptionIndex = existingImagesCount + i;
-        const description = imageDescriptions[descriptionIndex] || "";
-
         savedFiles.push({
           filename,
           originalName: file.name,
-          url: `/uploads/${filename}`,
-          description
+          url: `/uploads/${filename}`
         });
       }
 
@@ -165,9 +154,7 @@ export async function PATCH(
     const imagesToDeleteJson = formData.get("imagesToDelete") as string;
     const imagesToDelete: string[] = imagesToDeleteJson ? JSON.parse(imagesToDeleteJson) : [];
 
-    // Get image descriptions
-    const imageDescriptionsJson = formData.get("imageDescriptions") as string;
-    const imageDescriptions: string[] = imageDescriptionsJson ? JSON.parse(imageDescriptionsJson) : [];
+    // Note: Individual image descriptions are not used in this implementation
 
     // Get all new files from form data
     const newFiles: File[] = [];
@@ -178,7 +165,7 @@ export async function PATCH(
       }
     }
 
-    const result = await updateRepository(id, title, newFiles, imagesToDelete, imageDescriptions);
+    const result = await updateRepository(id, title, newFiles, imagesToDelete);
 
     if (!result.success) {
       return NextResponse.json(result, { status: 404 });
