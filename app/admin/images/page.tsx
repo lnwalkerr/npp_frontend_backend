@@ -40,7 +40,7 @@ function Page() {
   const dummyData = [];
 
   const handleEdit = (id: number | string) => {
-    router.push(`/images/${id}/edit`);
+    router.push(`/admin/images/${id}/edit`);
   };
 
   const handleDelete = (id: number | string) => {
@@ -154,7 +154,7 @@ function Page() {
         <button
           className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 disabled:pointer-events-none bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2"
           type="button"
-          onClick={() => router.push("/images/new")}
+          onClick={() => router.push("/admin/images/new")}
         >
           <Plus className="w-4 h-4" />
           New Repository

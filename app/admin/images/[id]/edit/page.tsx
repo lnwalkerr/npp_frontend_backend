@@ -33,7 +33,7 @@ export default function EditNewsPage(): JSX.Element {
   });
 
   const handleBack = (): void => {
-    router.push("/images");
+    router.push("/admin/images");
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
@@ -94,7 +94,7 @@ export default function EditNewsPage(): JSX.Element {
   };
 
   const handleCancel = (): void => {
-    router.push("/images");
+    router.push("/admin/images");
   };
 
   const handleTitleChange = (value: string): void => {

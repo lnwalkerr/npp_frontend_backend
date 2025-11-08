@@ -13,7 +13,7 @@ export default function EditNewsPage(): JSX.Element {
   const [action, setAction] = useState<string | null>(null);
 
   const handleBack = (): void => {
-    router.push("/videos");
+    router.push("/admin/videos");
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
@@ -31,7 +31,7 @@ export default function EditNewsPage(): JSX.Element {
   };
 
   const handleCancel = (): void => {
-    router.push("/videos");
+    router.push("/admin/videos");
   };
 
   return (
