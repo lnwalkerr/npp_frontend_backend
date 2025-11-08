@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, FormEvent, useCallback } from "react";
-import { ArrowLeft, Plus, X, Upload } from "lucide-react";
+import { useState, FormEvent, useCallback, useEffect } from "react";
+import { ArrowLeft, X, Upload } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardHeader, CardBody, CardFooter } from "@heroui/card";
-import { Input, Button, Textarea, Checkbox } from "@heroui/react";
+import { Input, Button, Textarea } from "@heroui/react";
 import { Form } from "@heroui/form";
 import { useDropzone } from "react-dropzone";
 
@@ -14,7 +14,9 @@ interface PhotoData {
   files: File[];
   description: string;
   isCover: boolean;
+  coverPhotoIndex: number | null;
   previews: string[];
+  originalName?: string;
 }
 
 interface RepositoryFormData {
@@ -22,35 +24,127 @@ interface RepositoryFormData {
   photos: PhotoData[];
 }
 
-export default function EditNewsPage(): JSX.Element {
+interface RepositoryData {
+  _id: string;
+  title: string;
+  images: Array<{ url: string; filename: string; originalName: string }>;
+  created_at: string;
+  imageCount: number;
+}
+
+export default function EditImagesPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [action, setAction] = useState<string | null>(null);
-  const [photoCounter, setPhotoCounter] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoCounter, setPhotoCounter] = useState(2);
   const [formData, setFormData] = useState<RepositoryFormData>({
     title: "",
-    photos: [],
+    photos: [
+      {
+        id: 1,
+        title: "Photo 1",
+        files: [],
+        description: "",
+        isCover: false,
+        coverPhotoIndex: null,
+        previews: [],
+      },
+    ],
   });
+
+  // Fetch repository data on component mount
+  useEffect(() => {
+    const fetchRepository = async () => {
+      try {
+        const response = await fetch(`/api/admin/images/${id}`);
+        const result = await response.json();
+
+        if (result.success) {
+          const repository: RepositoryData = result.data;
+
+          // Pre-fill form data
+          setFormData({
+            title: repository.title,
+            photos: [
+              {
+                id: 1,
+                title: "Existing Photos",
+                files: [], // New files will be added here
+                description: "",
+                isCover: false,
+                coverPhotoIndex: null,
+                previews: repository.images.map(img => img.url), // Use existing image URLs as previews
+              },
+            ],
+          });
+        } else {
+          alert(`Error: ${result.message}`);
+          router.push("/admin/images");
+        }
+      } catch (error) {
+        console.error("Error fetching repository:", error);
+        alert("Failed to load repository data");
+        router.push("/admin/images");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchRepository();
+    }
+  }, [id, router]);
 
   const handleBack = (): void => {
     router.push("/admin/images");
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
-    // Prepare final data for backend submission
-    const submitData = {
-      ...formData,
-      // Convert files to base64 or file objects as needed for your backend
-      // For file uploads, you might want to use FormData instead
-    };
+    if (!formData.title.trim()) {
+      alert("Please enter a repository title");
+      return;
+    }
 
-    console.log("✅ Form submitted:", submitData);
-    setAction(`submit ${JSON.stringify(submitData)}`);
+    setIsSubmitting(true);
 
-    // Example: Send to backend
-    // sendToBackend(submitData);
+    try {
+      // Create FormData to send to API
+      const formDataToSend = new FormData();
+      formDataToSend.append("title", formData.title.trim());
+
+      // Add only new files (not existing ones)
+      formData.photos.forEach((photo, photoIndex) => {
+        photo.files.forEach((file, fileIndex) => {
+          formDataToSend.append(`photo_${photoIndex}_file_${fileIndex}`, file);
+        });
+      });
+
+      console.log("🚀 Updating repository...");
+      console.log("Title:", formData.title);
+      console.log("New files:", formData.photos.reduce((sum, photo) => sum + photo.files.length, 0));
+
+      const response = await fetch(`/api/admin/images/${id}/update`, {
+        method: "PATCH",
+        body: formDataToSend,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ Repository "${result.data.title}" updated successfully!`);
+        router.push("/admin/images");
+      } else {
+        alert(`❌ Error: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("❌ Failed to update repository. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Example backend submission function
@@ -104,67 +198,19 @@ export default function EditNewsPage(): JSX.Element {
     }));
   };
 
-  const handleAddPhoto = (): void => {
-    const newPhoto: PhotoData = {
-      id: Date.now(),
-      title: `Photo ${photoCounter}`,
-      files: [],
-      description: "",
-      isCover: false,
-      previews: [],
-    };
-
-    setFormData((prev) => ({
-      ...prev,
-      photos: [...prev.photos, newPhoto],
-    }));
-    setPhotoCounter((prev) => prev + 1);
-  };
-
-  const handleDeletePhoto = (id: number): void => {
-    const photo = formData.photos.find((p) => p.id === id);
-
-    if (photo?.previews) {
-      photo.previews.forEach((preview) => URL.revokeObjectURL(preview));
-    }
-    setFormData((prev) => ({
-      ...prev,
-      photos: prev.photos.filter((photo) => photo.id !== id),
-    }));
-  };
-
-  const handlePhotoTitleChange = (id: number, title: string): void => {
+  const handleSetCoverPhoto = (imageIndex: number): void => {
     setFormData((prev) => ({
       ...prev,
       photos: prev.photos.map((photo) =>
-        photo.id === id ? { ...photo, title } : photo,
-      ),
-    }));
-  };
-
-  const handlePhotoDescriptionChange = (
-    id: number,
-    description: string,
-  ): void => {
-    setFormData((prev) => ({
-      ...prev,
-      photos: prev.photos.map((photo) =>
-        photo.id === id ? { ...photo, description } : photo,
-      ),
-    }));
-  };
-
-  const handleCoverPhotoChange = (id: number, isCover: boolean): void => {
-    setFormData((prev) => ({
-      ...prev,
-      photos: prev.photos.map((photo) =>
-        photo.id === id ? { ...photo, isCover } : { ...photo, isCover: false },
+        photo.id === 1
+          ? { ...photo, isCover: true, coverPhotoIndex: imageIndex }
+          : photo,
       ),
     }));
   };
 
   const onDrop = useCallback(
-    (acceptedFiles: File[], photoId: number) => {
+    (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
         const newPreviews = acceptedFiles.map((file) =>
           URL.createObjectURL(file),
@@ -173,14 +219,26 @@ export default function EditNewsPage(): JSX.Element {
         setFormData((prev) => ({
           ...prev,
           photos: prev.photos.map((photo) => {
-            if (photo.id === photoId) {
-              // Clean up old previews
-              photo.previews.forEach((preview) => URL.revokeObjectURL(preview));
+            if (photo.id === 1) {
+              const updatedFiles = [...photo.files, ...acceptedFiles];
+              const updatedPreviews = [...photo.previews, ...newPreviews];
+
+              // Auto-set cover photo logic for new images
+              let isCover = photo.isCover;
+              let coverPhotoIndex = photo.coverPhotoIndex;
+
+              // If this is the first new image being added and no cover is set, make it cover
+              if (photo.files.length === 0 && acceptedFiles.length === 1 && !photo.isCover) {
+                isCover = true;
+                coverPhotoIndex = photo.previews.length; // Index in the previews array
+              }
 
               return {
                 ...photo,
-                files: [...photo.files, ...acceptedFiles],
-                previews: [...photo.previews, ...newPreviews],
+                files: updatedFiles,
+                previews: updatedPreviews,
+                isCover,
+                coverPhotoIndex,
               };
             }
 
@@ -192,20 +250,55 @@ export default function EditNewsPage(): JSX.Element {
     [formData.photos],
   );
 
-  const removeImagePreview = (photoId: number, previewIndex: number) => {
+  const removeImagePreview = (previewIndex: number) => {
     setFormData((prev) => ({
       ...prev,
       photos: prev.photos.map((photo) => {
-        if (photo.id === photoId) {
-          // Clean up the specific preview URL
-          URL.revokeObjectURL(photo.previews[previewIndex]);
+        if (photo.id === 1) {
+          // Check if this is an existing image (from repository) or new uploaded file
+          const isExistingImage = previewIndex < (photo.previews.length - photo.files.length);
+
+          if (!isExistingImage) {
+            // This is a new uploaded file, revoke the object URL
+            const newFileIndex = previewIndex - (photo.previews.length - photo.files.length);
+            URL.revokeObjectURL(photo.previews[previewIndex]);
+          }
+
+          // Remove from arrays
+          const updatedFiles = isExistingImage ? photo.files : photo.files.filter((_, index) => index !== (previewIndex - (photo.previews.length - photo.files.length)));
+          const updatedPreviews = photo.previews.filter((_, index) => index !== previewIndex);
+
+          // Handle cover photo index adjustment
+          let isCover = photo.isCover;
+          let coverPhotoIndex = photo.coverPhotoIndex;
+
+          if (photo.coverPhotoIndex === previewIndex) {
+            // Cover photo was removed
+            if (updatedPreviews.length === 0) {
+              // No images left, clear cover photo
+              isCover = false;
+              coverPhotoIndex = null;
+            } else if (updatedPreviews.length === 1) {
+              // Only one image left, make it cover
+              isCover = true;
+              coverPhotoIndex = 0;
+            } else {
+              // Multiple images left, keep cover but adjust index if needed
+              if (photo.coverPhotoIndex !== null && photo.coverPhotoIndex > previewIndex) {
+                coverPhotoIndex = photo.coverPhotoIndex - 1;
+              }
+            }
+          } else if (photo.coverPhotoIndex !== null && photo.coverPhotoIndex > previewIndex) {
+            // Adjust cover photo index since an image before it was removed
+            coverPhotoIndex = photo.coverPhotoIndex - 1;
+          }
 
           return {
             ...photo,
-            files: photo.files.filter((_, index) => index !== previewIndex),
-            previews: photo.previews.filter(
-              (_, index) => index !== previewIndex,
-            ),
+            files: updatedFiles,
+            previews: updatedPreviews,
+            isCover,
+            coverPhotoIndex,
           };
         }
 
@@ -214,19 +307,48 @@ export default function EditNewsPage(): JSX.Element {
     }));
   };
 
-  const clearAllImages = (photoId: number) => {
-    const photo = formData.photos.find((p) => p.id === photoId);
-
-    if (photo?.previews) {
-      photo.previews.forEach((preview) => URL.revokeObjectURL(preview));
-    }
+  const clearAllImages = () => {
     setFormData((prev) => ({
       ...prev,
-      photos: prev.photos.map((photo) =>
-        photo.id === photoId ? { ...photo, files: [], previews: [] } : photo,
-      ),
+      photos: prev.photos.map((photo) => {
+        if (photo.id === 1) {
+          // Only clear new uploaded files, keep existing images
+          photo.previews.forEach((preview, index) => {
+            const isNewFile = index >= (photo.previews.length - photo.files.length);
+            if (isNewFile) {
+              URL.revokeObjectURL(preview);
+            }
+          });
+
+          // Keep existing images, remove only new uploads
+          const existingImagesCount = photo.previews.length - photo.files.length;
+          const existingPreviews = photo.previews.slice(0, existingImagesCount);
+
+          return {
+            ...photo,
+            files: [],
+            previews: existingPreviews,
+            isCover: existingPreviews.length > 0 ? photo.isCover : false,
+            coverPhotoIndex: existingPreviews.length > 0 ? photo.coverPhotoIndex : null,
+          };
+        }
+        return photo;
+      }),
     }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading repository...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -244,7 +366,7 @@ export default function EditNewsPage(): JSX.Element {
           <h1 className="text-3xl font-bold text-foreground">
             Edit Repository
           </h1>
-          <p className="mt-1 text-gray-500">Manage your photo collection</p>
+          <p className="mt-1 text-gray-500">Update your photo collection</p>
         </div>
       </div>
 
@@ -273,41 +395,16 @@ export default function EditNewsPage(): JSX.Element {
               {/* Photos Section */}
               <div className="w-full">
                 <Card className="p-4">
-                  <CardHeader className="flex w-full justify-between items-center px-0 py-2">
+                  <CardHeader className="px-0 py-2">
                     <p className="font-semibold text-lg">Photos</p>
-
-                    <button
-                      className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition border shadow-orange-500 px-3 py-1 rounded-full"
-                      type="button"
-                      onClick={handleAddPhoto}
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span className="text-sm">Add Photo</span>
-                    </button>
                   </CardHeader>
 
                   <CardBody className="overflow-visible py-2">
                     {/* Dynamic Photos */}
                     {formData.photos.map((photo, index) => (
                       <Card key={photo.id} className="mb-4 border">
-                        <CardHeader className="flex w-full justify-between items-center px-4 py-3">
-                          <Input
-                            className="font-semibold text-md border-none p-0"
-                            classNames={{
-                              input: "font-semibold text-md",
-                            }}
-                            value={photo.title}
-                            onChange={(e) =>
-                              handlePhotoTitleChange(photo.id, e.target.value)
-                            }
-                          />
-                          <button
-                            className="flex items-center justify-center w-6 h-6 text-gray-500 hover:text-red-600 transition cursor-pointer"
-                            type="button"
-                            onClick={() => handleDeletePhoto(photo.id)}
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                        <CardHeader className="px-4 py-3">
+                          <p className="font-semibold text-md">{photo.title}</p>
                         </CardHeader>
                         <CardBody className="px-4 pb-4">
                           <div className="flex flex-col gap-4">
@@ -316,45 +413,62 @@ export default function EditNewsPage(): JSX.Element {
                               <div className="mb-4">
                                 <div className="flex justify-between items-center mb-2">
                                   <label className="text-sm font-medium">
-                                    Selected Images ({photo.previews.length})
+                                    Images ({photo.previews.length})
                                   </label>
-                                  <button
-                                    className="text-xs text-red-500 hover:text-red-700"
-                                    type="button"
-                                    onClick={() => clearAllImages(photo.id)}
-                                  >
-                                    Clear All
-                                  </button>
+                                  {photo.files.length > 0 && (
+                                    <button
+                                      className="text-xs text-red-500 hover:text-red-700"
+                                      type="button"
+                                      onClick={() => clearAllImages()}
+                                    >
+                                      Clear New Uploads
+                                    </button>
+                                  )}
                                 </div>
                                 <div className="flex gap-2 overflow-x-auto pb-2">
                                   {photo.previews.map(
-                                    (preview, previewIndex) => (
-                                      <div
-                                        key={previewIndex}
-                                        className="relative flex-shrink-0"
-                                      >
-                                        <img
-                                          alt={`Preview ${previewIndex + 1}`}
-                                          className="w-20 h-20 object-cover rounded-lg border"
-                                          src={preview}
-                                        />
-                                        <button
-                                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600 transition text-xs"
-                                          type="button"
-                                          onClick={() =>
-                                            removeImagePreview(
-                                              photo.id,
-                                              previewIndex,
-                                            )
-                                          }
+                                    (preview, previewIndex) => {
+                                      const isExistingImage = previewIndex < (photo.previews.length - photo.files.length);
+                                      return (
+                                        <div
+                                          key={previewIndex}
+                                          className="relative flex-shrink-0 cursor-pointer"
+                                          onClick={() => handleSetCoverPhoto(previewIndex)}
                                         >
-                                          <X className="w-3 h-3" />
-                                        </button>
-                                        <div className="text-xs text-center mt-1 truncate w-20">
-                                          {photo.files[previewIndex]?.name}
+                                          <img
+                                            alt={`Preview ${previewIndex + 1}`}
+                                            className={`w-20 h-20 object-cover rounded-lg border-2 ${
+                                              photo.isCover && photo.coverPhotoIndex === previewIndex
+                                                ? "border-blue-500 ring-2 ring-blue-200"
+                                                : "border-gray-300"
+                                            }`}
+                                            src={preview}
+                                          />
+                                          {photo.isCover && photo.coverPhotoIndex === previewIndex && (
+                                            <div className="absolute inset-0 bg-blue-500 bg-opacity-20 rounded-lg flex items-center justify-center">
+                                              <span className="text-white text-xs font-semibold bg-blue-600 px-2 py-1 rounded">
+                                                Cover Photo
+                                              </span>
+                                            </div>
+                                          )}
+                                          {!isExistingImage && (
+                                            <button
+                                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600 transition text-xs shadow-lg"
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                removeImagePreview(previewIndex);
+                                              }}
+                                            >
+                                              <X className="w-3 h-3" />
+                                            </button>
+                                          )}
+                                          <div className="text-xs text-center mt-1 truncate w-20">
+                                            {isExistingImage ? "Existing" : photo.files[previewIndex - (photo.previews.length - photo.files.length)]?.name}
+                                          </div>
                                         </div>
-                                      </div>
-                                    ),
+                                      );
+                                    },
                                   )}
                                 </div>
                               </div>
@@ -363,38 +477,29 @@ export default function EditNewsPage(): JSX.Element {
                             {/* Drag & Drop File Upload */}
                             <div>
                               <label className="text-sm font-medium mb-2 block">
-                                Upload Images
+                                Add More Images
                               </label>
                               <PhotoDropzone
                                 photo={photo}
-                                onDrop={(files) => onDrop(files, photo.id)}
+                                onDrop={(files) => onDrop(files)}
                               />
                             </div>
 
-                            <Textarea
-                              className="w-full"
-                              minRows={2}
-                              placeholder="Photo description (optional)"
-                              value={photo.description}
-                              variant="flat"
-                              onChange={(e) =>
-                                handlePhotoDescriptionChange(
-                                  photo.id,
-                                  e.target.value,
-                                )
-                              }
-                            />
-                            <Checkbox
-                              isSelected={photo.isCover}
-                              onChange={(e) =>
-                                handleCoverPhotoChange(
-                                  photo.id,
-                                  e.target.checked,
-                                )
-                              }
-                            >
-                              Set as cover photo
-                            </Checkbox>
+                            {photo.previews.length > 1 && (
+                              <div className="text-sm text-gray-600">
+                                <p>💡 <strong>Click on any image above to set it as cover photo</strong></p>
+                                {photo.isCover && photo.coverPhotoIndex !== null && (
+                                  <p className="text-blue-600 mt-1">
+                                    Cover photo: Image {photo.coverPhotoIndex + 1}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                            {photo.previews.length === 1 && photo.isCover && (
+                              <div className="text-sm text-green-600">
+                                <p>✅ <strong>Single image automatically set as cover photo</strong></p>
+                              </div>
+                            )}
                           </div>
                         </CardBody>
                       </Card>
@@ -409,10 +514,10 @@ export default function EditNewsPage(): JSX.Element {
 
               {/* Buttons */}
               <div className="flex gap-3">
-                <Button color="primary" type="submit">
-                  Save Repository
+                <Button color="primary" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Updating..." : "Update Repository"}
                 </Button>
-                <Button type="button" variant="flat" onClick={handleCancel}>
+                <Button type="button" variant="flat" onClick={handleCancel} disabled={isSubmitting}>
                   Cancel
                 </Button>
               </div>
