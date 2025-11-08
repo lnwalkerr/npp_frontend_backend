@@ -6,7 +6,7 @@ import { existsSync } from "fs";
 interface Repository {
   _id: string;
   title: string;
-  images: Array<{ url: string; filename: string; originalName: string }>;
+  images: Array<{ url: string; filename: string; originalName: string; description?: string }>;
   created_at: string;
   updated_at?: string;
   imageCount: number;
@@ -30,7 +30,7 @@ async function ensureDataFile() {
 }
 
 // Update repository
-async function updateRepository(id: string, title: string, newFiles: File[] = [], imagesToDelete: string[] = []) {
+async function updateRepository(id: string, title: string, newFiles: File[] = [], imagesToDelete: string[] = [], imageDescriptions: string[] = []) {
   try {
     await ensureDataFile();
 
@@ -65,7 +65,14 @@ async function updateRepository(id: string, title: string, newFiles: File[] = []
           // Continue with other deletions
         }
       }
-      repository.imageCount = repository.images.length;
+    }
+
+    // Update descriptions for existing images
+    if (imageDescriptions.length > 0) {
+      repository.images = repository.images.map((img, index) => ({
+        ...img,
+        description: imageDescriptions[index] || img.description || ""
+      }));
     }
 
     // Handle new file uploads
@@ -79,9 +86,10 @@ async function updateRepository(id: string, title: string, newFiles: File[] = []
       }
 
       // Save new files
-      const savedFiles: { filename: string; originalName: string; url: string }[] = [];
+      const savedFiles: { filename: string; originalName: string; url: string; description?: string }[] = [];
 
-      for (const file of newFiles) {
+      for (let i = 0; i < newFiles.length; i++) {
+        const file = newFiles[i];
         const timestamp = Date.now();
         const randomId = Math.round(Math.random() * 1e9);
         const extension = file.name.split('.').pop() || 'jpg';
@@ -93,17 +101,24 @@ async function updateRepository(id: string, title: string, newFiles: File[] = []
 
         await writeFile(filePath, buffer);
 
+        // Get description for this new file if available
+        const existingImagesCount = repository.images.length;
+        const descriptionIndex = existingImagesCount + i;
+        const description = imageDescriptions[descriptionIndex] || "";
+
         savedFiles.push({
           filename,
           originalName: file.name,
-          url: `/uploads/${filename}`
+          url: `/uploads/${filename}`,
+          description
         });
       }
 
       // Add new files to repository
       repository.images.push(...savedFiles);
-      repository.imageCount = repository.images.length;
     }
+
+    repository.imageCount = repository.images.length;
 
     repository.updated_at = new Date().toISOString();
 
@@ -150,6 +165,10 @@ export async function PATCH(
     const imagesToDeleteJson = formData.get("imagesToDelete") as string;
     const imagesToDelete: string[] = imagesToDeleteJson ? JSON.parse(imagesToDeleteJson) : [];
 
+    // Get image descriptions
+    const imageDescriptionsJson = formData.get("imageDescriptions") as string;
+    const imageDescriptions: string[] = imageDescriptionsJson ? JSON.parse(imageDescriptionsJson) : [];
+
     // Get all new files from form data
     const newFiles: File[] = [];
     const formDataEntries = Array.from(formData.entries());
@@ -159,7 +178,7 @@ export async function PATCH(
       }
     }
 
-    const result = await updateRepository(id, title, newFiles, imagesToDelete);
+    const result = await updateRepository(id, title, newFiles, imagesToDelete, imageDescriptions);
 
     if (!result.success) {
       return NextResponse.json(result, { status: 404 });

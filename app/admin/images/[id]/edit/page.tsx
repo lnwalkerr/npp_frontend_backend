@@ -17,6 +17,7 @@ interface PhotoData {
   coverPhotoIndex: number | null;
   previews: string[];
   originalName?: string;
+  imageDescriptions?: string[]; // Individual descriptions for each image
 }
 
 interface RepositoryFormData {
@@ -27,7 +28,7 @@ interface RepositoryFormData {
 interface RepositoryData {
   _id: string;
   title: string;
-  images: Array<{ url: string; filename: string; originalName: string }>;
+  images: Array<{ url: string; filename: string; originalName: string; description?: string }>;
   created_at: string;
   imageCount: number;
 }
@@ -44,12 +45,13 @@ export default function EditImagesPage(): JSX.Element {
     photos: [
       {
         id: 1,
-        title: "Photo 1",
+        title: "Existing Photos",
         files: [],
         description: "",
         isCover: false,
         coverPhotoIndex: null,
         previews: [],
+        imageDescriptions: [],
       },
     ],
   });
@@ -76,6 +78,7 @@ export default function EditImagesPage(): JSX.Element {
                 isCover: false,
                 coverPhotoIndex: null,
                 previews: repository.images.map(img => img.url), // Use existing image URLs as previews
+                imageDescriptions: repository.images.map(img => img.description || ""), // Pre-fill descriptions if available
               },
             ],
           });
@@ -119,6 +122,12 @@ export default function EditImagesPage(): JSX.Element {
       // Add images to delete
       if (imagesToDelete.length > 0) {
         formDataToSend.append("imagesToDelete", JSON.stringify(imagesToDelete));
+      }
+
+      // Add image descriptions
+      const allDescriptions = formData.photos[0]?.imageDescriptions || [];
+      if (allDescriptions.length > 0) {
+        formDataToSend.append("imageDescriptions", JSON.stringify(allDescriptions));
       }
 
       // Add only new files (not existing ones)
@@ -205,6 +214,23 @@ export default function EditImagesPage(): JSX.Element {
     }));
   };
 
+  const handleImageDescriptionChange = (imageIndex: number, description: string): void => {
+    setFormData((prev) => ({
+      ...prev,
+      photos: prev.photos.map((photo) => {
+        if (photo.id === 1 && photo.imageDescriptions) {
+          const updatedDescriptions = [...photo.imageDescriptions];
+          updatedDescriptions[imageIndex] = description;
+          return {
+            ...photo,
+            imageDescriptions: updatedDescriptions,
+          };
+        }
+        return photo;
+      }),
+    }));
+  };
+
   const handleSetCoverPhoto = (imageIndex: number): void => {
     setFormData((prev) => ({
       ...prev,
@@ -229,6 +255,7 @@ export default function EditImagesPage(): JSX.Element {
             if (photo.id === 1) {
               const updatedFiles = [...photo.files, ...acceptedFiles];
               const updatedPreviews = [...photo.previews, ...newPreviews];
+              const updatedDescriptions = [...(photo.imageDescriptions || []), ...acceptedFiles.map(() => "")];
 
               // Auto-set cover photo logic for new images
               let isCover = photo.isCover;
@@ -244,6 +271,7 @@ export default function EditImagesPage(): JSX.Element {
                 ...photo,
                 files: updatedFiles,
                 previews: updatedPreviews,
+                imageDescriptions: updatedDescriptions,
                 isCover,
                 coverPhotoIndex,
               };
@@ -280,6 +308,9 @@ export default function EditImagesPage(): JSX.Element {
           const updatedFiles = isExistingImage ? photo.files : photo.files.filter((_, index) => index !== (previewIndex - existingImagesCount));
           const updatedPreviews = photo.previews.filter((_, index) => index !== previewIndex);
 
+          // Remove from descriptions array
+          const updatedDescriptions = photo.imageDescriptions?.filter((_, index) => index !== previewIndex) || [];
+
           // Handle cover photo index adjustment
           let isCover = photo.isCover;
           let coverPhotoIndex = photo.coverPhotoIndex;
@@ -309,6 +340,7 @@ export default function EditImagesPage(): JSX.Element {
             ...photo,
             files: updatedFiles,
             previews: updatedPreviews,
+            imageDescriptions: updatedDescriptions,
             isCover,
             coverPhotoIndex,
           };
@@ -335,11 +367,13 @@ export default function EditImagesPage(): JSX.Element {
           // Keep existing images, remove only new uploads
           const existingImagesCount = photo.previews.length - photo.files.length;
           const existingPreviews = photo.previews.slice(0, existingImagesCount);
+          const existingDescriptions = photo.imageDescriptions?.slice(0, existingImagesCount) || [];
 
           return {
             ...photo,
             files: [],
             previews: existingPreviews,
+            imageDescriptions: existingDescriptions,
             isCover: existingPreviews.length > 0 ? photo.isCover : false,
             coverPhotoIndex: existingPreviews.length > 0 ? photo.coverPhotoIndex : null,
           };
@@ -480,6 +514,26 @@ export default function EditImagesPage(): JSX.Element {
                                       );
                                     },
                                   )}
+                                </div>
+
+                                {/* Image Descriptions */}
+                                <div className="mt-4 space-y-3">
+                                  <label className="text-sm font-medium">Image Descriptions:</label>
+                                  {photo.previews.map((preview, previewIndex) => (
+                                    <div key={`desc-${previewIndex}`} className="flex flex-col gap-2">
+                                      <label className="text-xs text-gray-600">
+                                        Image {previewIndex + 1} Description:
+                                      </label>
+                                      <Textarea
+                                        size="sm"
+                                        minRows={2}
+                                        placeholder={`Description for image ${previewIndex + 1} (optional)`}
+                                        value={photo.imageDescriptions?.[previewIndex] || ""}
+                                        onChange={(e) => handleImageDescriptionChange(previewIndex, e.target.value)}
+                                        className="text-xs"
+                                      />
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             )}
