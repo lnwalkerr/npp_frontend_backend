@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,36 +30,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create FormData to send to backend (multer expects 'files' field)
-    const backendFormData = new FormData();
-    backendFormData.append("title", title);
-
-    // Add files to backend FormData with 'files' key (multer array)
-    files.forEach((file) => {
-      backendFormData.append("files", file);
-    });
-
-    // Call backend API
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-    const response = await fetch(`${backendUrl}/api/admin/images/create`, {
-      method: "POST",
-      body: backendFormData,
-      // Don't set Content-Type header - let fetch set it with boundary for FormData
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { success: false, message: data.message || "Failed to create repository" },
-        { status: response.status }
-      );
+    // Create uploads directory if it doesn't exist
+    const uploadsDir = join(process.cwd(), "public", "uploads");
+    try {
+      await mkdir(uploadsDir, { recursive: true });
+    } catch (error) {
+      // Directory might already exist, continue
     }
+
+    // Save files locally
+    const savedFiles: { filename: string; originalName: string; url: string }[] = [];
+
+    for (const file of files) {
+      const timestamp = Date.now();
+      const randomId = Math.round(Math.random() * 1e9);
+      const extension = file.name.split('.').pop() || 'jpg';
+      const filename = `${timestamp}-${randomId}.${extension}`;
+
+      const filePath = join(uploadsDir, filename);
+      const bytes = await file.arrayBuffer();
+      const buffer = new Uint8Array(bytes);
+
+      await writeFile(filePath, buffer);
+
+      savedFiles.push({
+        filename,
+        originalName: file.name,
+        url: `/uploads/${filename}`
+      });
+    }
+
+    // Create mock response (similar to backend structure)
+    const mockData = {
+      _id: `mock_${Date.now()}`,
+      title,
+      images: savedFiles.map(file => ({ url: file.url })),
+      created_at: new Date().toISOString(),
+      imageCount: savedFiles.length
+    };
 
     return NextResponse.json({
       success: true,
-      message: "Repository created successfully",
-      data: data.data,
+      message: "Repository created successfully (local storage)",
+      data: mockData,
     });
 
   } catch (error) {

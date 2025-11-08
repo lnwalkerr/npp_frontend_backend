@@ -84,7 +84,7 @@ export default function CreateImagesPage(): JSX.Element {
       const result = await response.json();
 
       if (result.success) {
-        alert("✅ Repository created successfully!");
+        alert(`✅ Repository "${result.data.title}" created successfully with ${result.data.imageCount} image(s)!`);
         router.push("/admin/images");
       } else {
         alert(`❌ Error: ${result.message}`);
