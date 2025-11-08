@@ -45,34 +45,54 @@ export default function CreateImagesPage(): JSX.Element {
     router.push("/admin/images");
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
-    // Prepare final data for backend submission
-    const submitData = {
-      title: formData.title,
-      photos: formData.photos.map((photo) => ({
-        id: photo.id,
-        title: photo.title,
-        description: photo.description,
-        isCover: photo.isCover,
-        coverPhotoIndex: photo.coverPhotoIndex,
-        coverPhotoFile: photo.coverPhotoIndex !== null ? photo.files[photo.coverPhotoIndex] : null,
-        files: photo.files,
-        previews: photo.previews, // These are URLs, not needed for backend
-      })),
-    };
+    if (!formData.title.trim()) {
+      alert("Please enter a repository title");
+      return;
+    }
 
-    console.log("✅ Form submitted:", submitData);
-    console.log("Cover photo info:", formData.photos.map(photo => ({
-      title: photo.title,
-      isCover: photo.isCover,
-      coverPhotoIndex: photo.coverPhotoIndex,
-      coverPhotoFile: photo.coverPhotoIndex !== null ? photo.files[photo.coverPhotoIndex]?.name : null,
-    })));
+    // Check if any photos have files
+    const hasFiles = formData.photos.some(photo => photo.files.length > 0);
+    if (!hasFiles) {
+      alert("Please upload at least one image");
+      return;
+    }
 
-    // Example: Send to backend
-    // sendToBackend(submitData);
+    try {
+      // Create FormData to send to API
+      const formDataToSend = new FormData();
+      formDataToSend.append("title", formData.title.trim());
+
+      // Add all files with proper naming
+      formData.photos.forEach((photo, photoIndex) => {
+        photo.files.forEach((file, fileIndex) => {
+          formDataToSend.append(`photo_${photoIndex}_file_${fileIndex}`, file);
+        });
+      });
+
+      console.log("🚀 Submitting repository creation...");
+      console.log("Title:", formData.title);
+      console.log("Total files:", formData.photos.reduce((sum, photo) => sum + photo.files.length, 0));
+
+      const response = await fetch("/api/admin/images/create", {
+        method: "POST",
+        body: formDataToSend,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert("✅ Repository created successfully!");
+        router.push("/admin/images");
+      } else {
+        alert(`❌ Error: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("❌ Failed to create repository. Please try again.");
+    }
   };
 
   // Example backend submission function
