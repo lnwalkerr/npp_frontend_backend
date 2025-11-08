@@ -40,6 +40,7 @@ function Page() {
   const [filters, setFilters] = useState({
     category: "All Categories",
     priority: "All Priorities",
+    status: "All Statuses",
     search: "",
   });
   const [selectedQuery, setSelectedQuery] = useState<Query | null>(null);
@@ -56,20 +57,19 @@ function Page() {
     totalItems: 0,
   });
 
-  // Backend doesn't have queries API, so show empty data
-
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-
-  // Backend doesn't have queries API, so show empty data
-  const dummyData = [];
 
   const categories = [
     "All Categories",
     "Infrastructure",
     "Education",
     "Healthcare",
+    "Agriculture",
+    "Employment",
+    "Other"
   ];
   const priorities = ["All Priorities", "High", "Medium", "Low"];
+  const statuses = ["All Statuses", "Open", "In Progress", "Resolved", "Closed"];
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -88,8 +88,12 @@ function Page() {
     switch (status) {
       case "Open":
         return "bg-blue-100 text-blue-800";
+      case "In Progress":
+        return "bg-yellow-100 text-yellow-800";
       case "Resolved":
         return "bg-green-100 text-green-800";
+      case "Closed":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -102,20 +106,36 @@ function Page() {
     }));
   };
 
-  // Backend doesn't have queries API, so show empty data
   const fetchQueries = async (pageNum: number, currentFilters: any) => {
     setIsLoading(true);
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
     try {
-      // Since backend doesn't have queries API, show empty data
-      setApiData({
-        queries: [],
-        totalPages: 1,
-        totalItems: 0,
+      const queryParams = new URLSearchParams({
+        page: pageNum.toString(),
+        limit: "10",
+        category: currentFilters.category,
+        priority: currentFilters.priority,
+        status: currentFilters.status,
+        search: currentFilters.search,
       });
+
+      const response = await fetch(`/api/admin/queries?${queryParams}`);
+      const data = await response.json();
+
+      if (data.status_code === 200) {
+        setApiData({
+          queries: data.queries,
+          totalPages: data.totalPages,
+          totalItems: data.totalItems,
+        });
+      } else {
+        console.error("Error fetching queries:", data.message);
+        setApiData({
+          queries: [],
+          totalPages: 1,
+          totalItems: 0,
+        });
+      }
     } catch (error) {
       console.error("Error fetching queries:", error);
       setApiData({
@@ -149,42 +169,104 @@ function Page() {
     fetchQueries(page, filters);
   }, []);
 
-  const handleView = (query: Query) => {
-    setSelectedQuery(query);
-    setReplyText("");
-    onOpen();
+  const handleView = async (query: Query) => {
+    try {
+      const response = await fetch(`/api/admin/queries/${query.id}`);
+      const data = await response.json();
+
+      if (data.status_code === 200) {
+        setSelectedQuery(data.query);
+        setReplyText(data.query.reply || "");
+        onOpen();
+      } else {
+        console.error("Error fetching query details:", data.message);
+        alert("Failed to load query details");
+      }
+    } catch (error) {
+      console.error("Error fetching query details:", error);
+      alert("Failed to load query details");
+    }
   };
 
-  const handleDelete = (id: number | string) => {
+  const handleDelete = async (id: number | string) => {
     const confirmed = confirm("Are you sure you want to delete this query?");
 
     if (confirmed) {
-      console.log("Deleted query with ID:", id);
-      // In real implementation, call API and then refetch
-      fetchQueries(page, filters);
+      try {
+        const response = await fetch(`/api/admin/queries/${id}`, {
+          method: "DELETE",
+        });
+        const data = await response.json();
+
+        if (data.status_code === 200) {
+          alert("Query deleted successfully");
+          fetchQueries(page, filters);
+        } else {
+          console.error("Error deleting query:", data.message);
+          alert("Failed to delete query");
+        }
+      } catch (error) {
+        console.error("Error deleting query:", error);
+        alert("Failed to delete query");
+      }
     }
   };
 
-  const handleSendReply = () => {
+  const handleSendReply = async () => {
     if (selectedQuery && replyText.trim()) {
-      console.log(
-        "Sending reply for query:",
-        selectedQuery.id,
-        "Reply:",
-        replyText,
-      );
-      // In real implementation, call API to update the query
-      // For demo, we'll just close the details and refetch
-      setReplyText("");
-      fetchQueries(page, filters);
+      try {
+        const response = await fetch(`/api/admin/queries/${selectedQuery.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            reply: replyText.trim(),
+            status: "Resolved"
+          }),
+        });
+        const data = await response.json();
+
+        if (data.status_code === 200) {
+          alert("Reply sent successfully");
+          setReplyText("");
+          fetchQueries(page, filters);
+        } else {
+          console.error("Error sending reply:", data.message);
+          alert("Failed to send reply");
+        }
+      } catch (error) {
+        console.error("Error sending reply:", error);
+        alert("Failed to send reply");
+      }
     }
   };
 
-  const handleStatusChange = (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string) => {
     if (selectedQuery) {
-      // In real implementation, call API to update status
-      // For demo, we'll just refetch
-      fetchQueries(page, filters);
+      try {
+        const response = await fetch(`/api/admin/queries/${selectedQuery.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: newStatus
+          }),
+        });
+        const data = await response.json();
+
+        if (data.status_code === 200) {
+          alert(`Query status updated to ${newStatus}`);
+          fetchQueries(page, filters);
+        } else {
+          console.error("Error updating status:", data.message);
+          alert("Failed to update query status");
+        }
+      } catch (error) {
+        console.error("Error updating status:", error);
+        alert("Failed to update query status");
+      }
     }
   };
 
@@ -312,7 +394,7 @@ function Page() {
                         </div>
                       )}
 
-                    {selectedQuery.status === "Open" && (
+                    {(selectedQuery.status === "Open" || selectedQuery.status === "In Progress") && (
                       <div>
                         <p className="text-sm text-gray-500 mb-2">
                           Type your reply here...
@@ -349,6 +431,20 @@ function Page() {
                 </Button>
                 <Button
                   color={
+                    selectedQuery?.status === "In Progress" ? "primary" : "default"
+                  }
+                  variant={
+                    selectedQuery?.status === "In Progress" ? "solid" : "flat"
+                  }
+                  onPress={() => {
+                    handleStatusChange("In Progress");
+                    onClose();
+                  }}
+                >
+                  Set as In Progress
+                </Button>
+                <Button
+                  color={
                     selectedQuery?.status === "Resolved" ? "primary" : "default"
                   }
                   variant={
@@ -362,7 +458,7 @@ function Page() {
                   Set as Resolved
                 </Button>
 
-                {selectedQuery?.status === "Open" && (
+                {(selectedQuery?.status === "Open" || selectedQuery?.status === "In Progress") && (
                   <Button
                     color="primary"
                     disabled={!replyText.trim()}
@@ -389,7 +485,7 @@ function Page() {
         <CardBody>
           {/* Search and Filters - preserved original style */}
           <div className="flex flex-col gap-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
               <Input
                 className="w-full"
                 label="Search by subject..."
@@ -417,6 +513,17 @@ function Page() {
               >
                 {priorities.map((priority) => (
                   <SelectItem key={priority}>{priority}</SelectItem>
+                ))}
+              </Select>
+
+              <Select
+                className="w-full"
+                label="All Statuses"
+                value={filters.status}
+                onChange={(e) => handleFilterChange("status", e.target.value)}
+              >
+                {statuses.map((status) => (
+                  <SelectItem key={status}>{status}</SelectItem>
                 ))}
               </Select>
             </div>
