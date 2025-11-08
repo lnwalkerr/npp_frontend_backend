@@ -220,7 +220,7 @@ export default function EditEventPage(): JSX.Element {
                 placeholder="Select event status"
               >
                 {statusOptions.map((option) => (
-                  <SelectItem key={option.key} value={option.key}>
+                  <SelectItem key={option.key}>
                     {option.label}
                   </SelectItem>
                 ))}

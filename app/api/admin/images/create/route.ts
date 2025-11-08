@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import FormData from "form-data";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +14,8 @@ export async function POST(request: NextRequest) {
 
     // Get all files from form data
     const files: File[] = [];
-    for (const [key, value] of formData.entries()) {
+    const formDataEntries = Array.from(formData.entries());
+    for (const [key, value] of formDataEntries) {
       if (value instanceof File && key.startsWith("photo_")) {
         files.push(value);
       }

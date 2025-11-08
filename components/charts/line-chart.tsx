@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
+import { Legend as RechartsLegend } from "recharts";
 
 // Lazy load recharts components
 const LineChart = dynamic(
@@ -51,12 +52,7 @@ const Tooltip = dynamic(
   },
 );
 
-const Legend = dynamic(
-  () => import("recharts").then((mod) => ({ default: mod.Legend })),
-  {
-    ssr: false,
-  },
-);
+// Legend imported directly above
 
 const ResponsiveContainer = dynamic(
   () =>
@@ -89,7 +85,7 @@ export function LazyLineChart({ data, height = 400 }: LineChartComponentProps) {
           <XAxis dataKey="name" />
           <YAxis />
           <Tooltip />
-          <Legend />
+          <RechartsLegend />
           <Line dataKey="users" stroke="#8884d8" type="monotone" />
         </LineChart>
       </ResponsiveContainer>

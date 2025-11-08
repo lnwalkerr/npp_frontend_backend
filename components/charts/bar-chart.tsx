@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
+import { Legend as RechartsLegend } from "recharts";
 
 // Lazy load recharts components
 const BarChart = dynamic(
@@ -51,12 +52,7 @@ const Tooltip = dynamic(
   },
 );
 
-const Legend = dynamic(
-  () => import("recharts").then((mod) => ({ default: mod.Legend })),
-  {
-    ssr: false,
-  },
-);
+// Legend imported directly above
 
 const ResponsiveContainer = dynamic(
   () =>
@@ -89,7 +85,7 @@ export function LazyBarChart({ data, height = 400 }: BarChartComponentProps) {
           <XAxis dataKey="name" />
           <YAxis domain={[0, 2600]} ticks={[0, 650, 1300, 1950, 2600]} />
           <Tooltip />
-          <Legend />
+          <RechartsLegend />
           <Bar dataKey="Donations" fill="#28a745" />
           <Bar dataKey="News" fill="#f97316" />
         </BarChart>

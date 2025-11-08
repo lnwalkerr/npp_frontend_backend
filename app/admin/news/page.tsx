@@ -141,7 +141,7 @@ function Page() {
   const renderCell = React.useCallback(
     (
       article: {
-        id: number;
+        id: string;
         title: string;
         section: string;
         date: string;
