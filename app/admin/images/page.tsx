@@ -36,40 +36,68 @@ function Page() {
     totalItems: 0,
   });
 
-  // Backend doesn't have images API, so show empty data
-  const dummyData = [];
-
   const handleEdit = (id: number | string) => {
     router.push(`/admin/images/${id}/edit`);
   };
 
-  const handleDelete = (id: number | string) => {
+  const handleDelete = async (id: number | string) => {
     const confirmed = confirm(
       "Are you sure you want to delete this repository?",
     );
 
     if (confirmed) {
-      console.log("Deleted repository with ID:", id);
-      // In real implementation, you would call your API here
-      // For demo, we'll just refetch the data
-      fetchRepositories(page, searchTerm);
+      try {
+        const response = await fetch(`/api/admin/images/delete/${id}`, {
+          method: "DELETE",
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert("Repository deleted successfully!");
+          fetchRepositories(page, searchTerm);
+        } else {
+          alert(`Error: ${result.message}`);
+        }
+      } catch (error) {
+        console.error("Error deleting repository:", error);
+        alert("Failed to delete repository. Please try again.");
+      }
     }
   };
 
-  // Backend doesn't have images API, so show empty data
   const fetchRepositories = async (pageNum: number, search: string = "") => {
     setIsLoading(true);
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
     try {
-      // Since backend doesn't have images API, show empty data
-      setApiData({
-        repositories: [],
-        totalPages: 1,
-        totalItems: 0,
+      const params = new URLSearchParams({
+        page: pageNum.toString(),
+        limit: "10",
+        ...(search && { search }),
       });
+
+      const response = await fetch(`/api/admin/images?${params}`);
+      const result = await response.json();
+
+      if (result.success) {
+        setApiData({
+          repositories: result.data.map((repo: any) => ({
+            id: repo._id,
+            title: repo.title,
+            photos: `${repo.imageCount} photos`,
+            created: new Date(repo.created_at).toLocaleDateString(),
+          })),
+          totalPages: result.pagination.totalPages,
+          totalItems: result.pagination.totalItems,
+        });
+      } else {
+        console.error("API Error:", result.message);
+        setApiData({
+          repositories: [],
+          totalPages: 1,
+          totalItems: 0,
+        });
+      }
     } catch (error) {
       console.error("Error fetching repositories:", error);
       setApiData({

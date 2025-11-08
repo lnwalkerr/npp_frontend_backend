@@ -1,6 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
+import { writeFile, mkdir, readFile } from "fs/promises";
 import { join } from "path";
+import { existsSync } from "fs";
+
+interface Repository {
+  _id: string;
+  title: string;
+  images: Array<{ url: string; filename: string; originalName: string }>;
+  created_at: string;
+  imageCount: number;
+}
+
+const REPOSITORIES_FILE = join(process.cwd(), "data", "repositories.json");
+
+// Ensure data directory and repositories file exist
+async function ensureDataFile() {
+  const dataDir = join(process.cwd(), "data");
+  try {
+    if (!existsSync(dataDir)) {
+      await import("fs").then(fs => fs.mkdirSync(dataDir, { recursive: true }));
+    }
+    if (!existsSync(REPOSITORIES_FILE)) {
+      await writeFile(REPOSITORIES_FILE, JSON.stringify([], null, 2));
+    }
+  } catch (error) {
+    console.error("Error ensuring data file:", error);
+  }
+}
+
+// Save repository metadata
+async function saveRepository(repository: Repository) {
+  try {
+    await ensureDataFile();
+
+    const data = await readFile(REPOSITORIES_FILE, "utf-8");
+    const repositories: Repository[] = JSON.parse(data);
+
+    repositories.push(repository);
+
+    await writeFile(REPOSITORIES_FILE, JSON.stringify(repositories, null, 2));
+  } catch (error) {
+    console.error("Error saving repository:", error);
+    throw error;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -60,19 +103,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create mock response (similar to backend structure)
-    const mockData = {
-      _id: `mock_${Date.now()}`,
+    // Create repository object
+    const repository: Repository = {
+      _id: `repo_${Date.now()}`,
       title,
-      images: savedFiles.map(file => ({ url: file.url })),
+      images: savedFiles,
       created_at: new Date().toISOString(),
       imageCount: savedFiles.length
     };
 
+    // Save repository metadata
+    await saveRepository(repository);
+
     return NextResponse.json({
       success: true,
       message: "Repository created successfully (local storage)",
-      data: mockData,
+      data: repository,
     });
 
   } catch (error) {
